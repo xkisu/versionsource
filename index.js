@@ -11,6 +11,7 @@ const querystring = require('querystring')
 const EventEmitter = require('events')
 const zlib = require('zlib')
 const NodeGit = require("nodegit")
+const Promise = require('bluebird')
 
 // base options for new library instance
 const baseOpts = {
@@ -52,8 +53,9 @@ class VersionSource extends EventEmitter {
     }
 
     // process http/https requests
-    process (opts, req, res) {
+    process (opts) {
 
+        opts.response.setHeader('connection', 'close')
         debugProcess('process request')
 
         // check for errors...
@@ -92,9 +94,10 @@ class VersionSource extends EventEmitter {
             }
         }
 
-
+        // variable to hold the handler where the regex matches
         var handler = undefined
 
+        // loop through handlers and find the one with the matching regex
         for (let handle in handlers) { 
             const regex = handlers[handle]
 
@@ -103,46 +106,77 @@ class VersionSource extends EventEmitter {
             }
         }
 
+        // true if the request URL matches an avaliable handler
         if (handler) {
             const modulePath = './lib/handlers/' + handler
             debugProcess('handling request with handler: %s', modulePath)
-            if (require.resolve(modulePath)) {
-                console.log(modulePath)
-                require(modulePath).call(this, opts)
+            if (require.resolve(modulePath)) { // check the handler module exists
+                require(modulePath).call(this, opts) // call the handler and pass this class instance as context
             } else {
                 throw new Error(`VersionSource cannot find internal handler module for "${modulePath}"!`)
             }
-        } else {
+        } else { // hit when the request can't be processed by the library
+            // only post and get methods are used by git
             if (req.method !== 'GET' && req.method !== 'POST') {
                 res.statusCode = 405
                 res.end('method not supported')
-            } else {
+            } else { // whatever the client requested we don't support
                 res.statusCode = 404
                 res.end('not found')
             }
         }
     }
 
+    // get the absolute path to the directory
     _getPath (repository) {
         return path.resolve(path.join(this.opts.repositories.path, repository))
     }
 
+    _getRepositoryFilePath (repository, repofile) {
+        return path.resolve(path.join(this._getPath(repository), repofile))
+    }
+
+    // create the directory path and initialize it as a blank repo
     _create (repository) {
         const repoPath = this._getPath(repository)
         return new Promise((resolve, reject) => {
             fs.exists(repoPath, (exists) => {
-                if(!exists && this.opts.repositories.create) {
+                if(!exists) {
                     mkdirp(repoPath, function (err) {
                         if(err) {
                             reject(err)
                         } else {
+                            // initialize a bare git repository
                             NodeGit.Repository.init(repoPath, 1).then(repo => {
-                                resolve(repo)
+                                resolve()
                             })
                         }
                     })
                 } else {
-                    reject()
+                    resolve()
+                }
+            })
+        })
+    }
+
+    _exists (repository) {
+        return new Promise((resolve) => {
+            fs.access(this._getPath(repository), fs.constants.R_OK | fs.constants.W_OK, (err) => {
+                if(err) resolve(false)
+                else resolve(true)
+            })
+        })
+    }
+
+    _fileExists (repository, repofile) {
+        return new Promise((resolve) => {
+            fs.stat(repofile, function(err, stat) {
+                if(err == null) {
+                    resolve(true)
+                } else if(err.code == 'ENOENT') {
+                    resolve(false)
+                } else {
+                    reject(err)
                 }
             })
         })
