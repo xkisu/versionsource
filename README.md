@@ -62,6 +62,7 @@ See https://stackoverflow.com/questions/1558719/using-a-remote-repository-with-n
  * API/library docs
  * Authentiction
  * SSH
+ * Distributed server storage
 
 
 # Ideas
