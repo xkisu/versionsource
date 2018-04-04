@@ -129,11 +129,15 @@ class VersionSource extends EventEmitter {
 
     // get the absolute path to the directory
     _getPath (repository) {
-        return path.resolve(path.join(this.opts.repositories.path, repository))
+        const p = path.resolve(path.join(this.opts.repositories.path, repository))
+        debug('_getPath(%s) = %s', repository, p)
+        return p
     }
 
     _getRepositoryFilePath (repository, repofile) {
-        return path.resolve(path.join(this._getPath(repository), repofile))
+        const p = path.resolve(path.join(this._getPath(repository), repofile))
+        debug('_getRepositoryFilePath(%s, %s) = %s', repository, repofile, p)
+        return p
     }
 
     // create the directory path and initialize it as a blank repo
@@ -159,11 +163,18 @@ class VersionSource extends EventEmitter {
         })
     }
 
-    _exists (repository) {
+    _repoExists (repository) {
         return new Promise((resolve) => {
-            fs.access(this._getPath(repository), fs.constants.R_OK | fs.constants.W_OK, (err) => {
-                if(err) resolve(false)
-                else resolve(true)
+            fs.stat(this._getPath(repository), function(err, stat) {
+                if(err == null) {
+                    resolve(true)
+                    debug('_repoExists(%s) = true', repository)
+                } else if(err.code == 'ENOENT') {
+                    debug('_repoExists(%s) = false', repository)
+                    resolve(false)
+                } else {
+                    reject(err)
+                }
             })
         })
     }
