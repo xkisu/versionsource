@@ -2,39 +2,54 @@ const express = require('express')
 const app = express()
 
 const VersionSource = require('../')
+const GitMessage = require('../message')
 const serve = new VersionSource({
     repositories: {
         path: './repositories'
     }
 })
 
-serve.on('info', info => {
+serve.on('info', info => { // emitted when repo is queried for info
     console.log('info')
     console.log('repository: ' + info.repo)
     info.accept()
 })
 
-serve.on('head', head => {
+serve.on('head', head => { // emitted when queried for HEAD
     console.log('head')
     console.log('repository: ' + head.repo)
     head.accept()
 })
 
-serve.on('fetch', fetch => {
-    console.log('fetch')
-    console.log(' - repository: ' + fetch.repo)
-    fetch.accept()
-})
-
-serve.on('tags', tags => {
+serve.on('tags', tags => { // emitted for push --tags
     console.log('tags')
     console.log(' - repository: ' + tags.repo)
     tags.accept()
 })
 
-serve.on('push', push => {
+serve.on('fetch', fetch => { // emitted by clone and pull
+    console.log('fetch')
+    console.log(' - repository: ' + fetch.repo)
+    fetch.accept()
+})
+
+serve.on('push', push => { // emitted for a push
     console.log('push')
     console.log(' - repository: ' + push.repo)
+
+    // event to inject data into response stream after git data has been sent
+    push.on('response', function(resp) {
+        // stream wrapper for packing git messages
+        const m = new GitMessage(resp.stream)
+        m.write('Processing...\n')
+        setTimeout(() => {
+            // close the message stream
+            m.end('This is VersionSource!\n')
+            // close the response stream
+            resp.end()
+        }, 2000)
+    })
+
     push.accept()
 })
 

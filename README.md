@@ -73,3 +73,5 @@ See https://stackoverflow.com/questions/1558719/using-a-remote-repository-with-n
   * c++ make/cmake build
 
 # Notes
+ * Protocol for ./handlers/action - https://github.com/git/git/blob/master/Documentation/technical/pack-protocol.txt
+ 
