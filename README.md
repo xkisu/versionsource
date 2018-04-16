@@ -63,6 +63,7 @@ See https://stackoverflow.com/questions/1558719/using-a-remote-repository-with-n
  * Authentiction
  * SSH
  * Distributed server storage
+ * Add error messages for when the nodejs app crashes or if there is an error in the event handler
 
 
 # Ideas
