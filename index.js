@@ -23,7 +23,8 @@ const baseOpts = {
         realm: 'VersionSource' // realm for basicauth
     },
     repositories: {
-        create: true // create repository directory if it doesn't exist
+        create: true, // create repository directory if it doesn't exist
+        bare: true
     }
 }
 
@@ -151,7 +152,7 @@ class VersionSource extends EventEmitter {
                             reject(err)
                         } else {
                             // initialize a bare git repository
-                            NodeGit.Repository.init(repoPath, 1).then(repo => {
+                            NodeGit.Repository.init(repoPath, this.opts.repositories.base ? 1 : 0).then(repo => {
                                 resolve()
                             })
                         }
