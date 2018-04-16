@@ -153,7 +153,7 @@ class VersionSource extends EventEmitter {
                             reject(err)
                         } else {
                             // initialize a bare git repository
-                            NodeGit.Repository.init(repoPath, opts.repositories.base ? 1 : 0).then(repo => {
+                            NodeGit.Repository.init(repoPath, opts.repositories.bare ? 1 : 0).then(repo => {
                                 resolve()
                             })
                         }
