@@ -144,6 +144,7 @@ class VersionSource extends EventEmitter {
     // create the directory path and initialize it as a blank repo
     _create (repository) {
         const repoPath = this._getPath(repository)
+        const opts = this.opts
         return new Promise((resolve, reject) => {
             fs.exists(repoPath, (exists) => {
                 if(!exists) {
@@ -152,7 +153,7 @@ class VersionSource extends EventEmitter {
                             reject(err)
                         } else {
                             // initialize a bare git repository
-                            NodeGit.Repository.init(repoPath, this.opts.repositories.base ? 1 : 0).then(repo => {
+                            NodeGit.Repository.init(repoPath, opts.repositories.base ? 1 : 0).then(repo => {
                                 resolve()
                             })
                         }
